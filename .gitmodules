@@ -1,0 +1,3 @@
+[submodule "content"]
+	path = content
+	url = git@github.com:dariustanrd/obsidian_knowledge_hub.git
