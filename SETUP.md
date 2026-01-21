@@ -1,49 +1,101 @@
-# Setup Guide: Symlinking Content and GitHub Pages Deployment
+# Setup Guide: Git Submodules and GitHub Pages Deployment
 
-This guide explains how to symlink your content files from another location and deploy to GitHub Pages.
+This guide explains how to use Git submodules to manage your content separately and deploy to GitHub Pages.
 
-## Local Development with Symlinks
+## Overview
 
-### Step 1: Symlink Your Content
+This repository uses **Git submodules** to manage content. Your content lives in a separate Git repository and is included as a submodule in the `content/` directory.
 
-Use the provided script to symlink your content files:
+## Initial Setup
+
+### Step 1: Set Up Your Content Repository
+
+Your content needs to be in a Git repository. If you don't have one:
 
 ```bash
-./symlink-content.sh /path/to/your/notes
+# Create and initialize your content repository
+mkdir ~/my-knowledge-content
+cd ~/my-knowledge-content
+git init
+git add .
+git commit -m "Initial content"
+
+# Create a GitHub repository and push
+# (Create the repo on GitHub first, then:)
+git remote add origin https://github.com/yourusername/your-content-repo.git
+git branch -M main
+git push -u origin main
 ```
 
-This will create symlinks in the `content/` directory pointing to your source files.
+### Step 2: Add Content as Submodule
 
-### Step 2: Build Locally
+In this Quartz repository:
 
 ```bash
+# Remove existing content (if any)
+rm -rf content/*
+
+# Add your content repo as a submodule
+git submodule add https://github.com/yourusername/your-content-repo.git content
+
+# Commit the submodule
+git add .gitmodules content
+git commit -m "Add content as submodule"
+git push
+```
+
+For detailed submodule instructions, see [SUBMODULE_SETUP.md](./SUBMODULE_SETUP.md).
+
+## Daily Workflow
+
+### Updating Content
+
+1. **Make changes in your content repository:**
+   ```bash
+   cd ~/my-knowledge-content
+   # Edit your markdown files
+   git add .
+   git commit -m "Add new notes"
+   git push
+   ```
+
+2. **Update the submodule reference in Quartz:**
+   ```bash
+   cd /Users/darius/Workspaces/quartz_knowledge_hub_site
+   ./update-content.sh "Update content"
+   git push
+   ```
+
+   Or manually:
+   ```bash
+   git submodule update --remote content
+   git add content
+   git commit -m "Update content"
+   git push
+   ```
+
+### Building Locally
+
+```bash
+# Make sure submodule is initialized
+git submodule update --init --recursive
+
+# Install dependencies (first time only)
 npm install
+
+# Build Quartz
 npx quartz build
-npx quartz build --serve  # To preview locally
+npx quartz build --serve  # Preview locally at http://localhost:8080
 ```
 
 ## GitHub Pages Deployment
 
-### Important Note About Symlinks
+The GitHub Actions workflow automatically:
+1. Checks out the repository **with submodules**
+2. Builds your Quartz site
+3. Deploys to GitHub Pages
 
-GitHub Actions cannot follow symlinks to files outside the repository. You have two options:
-
-### Option 1: Copy Files Before Committing (Recommended for Simple Setup)
-
-Before committing and pushing, copy your files instead of symlinking:
-
-```bash
-./symlink-content.sh /path/to/your/notes --copy
-git add content/
-git commit -m "Update content"
-git push
-```
-
-The GitHub Actions workflow will automatically build and deploy your site.
-
-### Option 2: Use GitHub Actions to Copy from Another Repo
-
-If your content is in a separate GitHub repository, you can modify the workflow to checkout and copy from that repo. See the workflow file for comments on how to do this.
+No manual steps needed! Just push your changes (including submodule updates) and the site will deploy automatically.
 
 ## Configuration
 
@@ -68,12 +120,33 @@ baseUrl: "your-username.github.io/your-repo-name",
 ## Workflow
 
 The deployment workflow (`.github/workflows/deploy.yml`) will:
-1. Trigger on pushes to `v4` or `main` branches
-2. Build your Quartz site
-3. Deploy to GitHub Pages
+1. Trigger on pushes to `v4` branch
+2. Checkout repository with submodules
+3. Build your Quartz site
+4. Deploy to GitHub Pages
+
+## Cloning on a New Machine
+
+When cloning this repository, make sure to include submodules:
+
+```bash
+git clone --recurse-submodules https://github.com/dariustanrd/quartz_knowledge_hub.git
+```
+
+Or if already cloned:
+
+```bash
+git submodule update --init --recursive
+```
 
 ## Troubleshooting
 
-- **Symlinks not working in GitHub Actions**: This is expected. Use `--copy` mode before committing.
-- **Build fails**: Make sure all dependencies are installed (`npm ci`)
+- **Submodule shows as modified**: Run `git submodule update --init --recursive` to sync
+- **Build fails**: Make sure submodules are initialized (`git submodule update --init --recursive`)
+- **Private content repo**: See [SUBMODULE_SETUP.md](./SUBMODULE_SETUP.md) for PAT token setup
 - **Pages not updating**: Check that GitHub Pages is set to use "GitHub Actions" as the source
+
+## Additional Resources
+
+- [SUBMODULE_SETUP.md](./SUBMODULE_SETUP.md) - Detailed submodule guide
+- [Quartz Documentation](https://quartz.jzhao.xyz/) - Full Quartz documentation

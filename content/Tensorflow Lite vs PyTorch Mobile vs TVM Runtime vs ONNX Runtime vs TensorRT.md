@@ -1,1 +1,0 @@
-/Users/darius/Documents/Darius Knowledge Bank/01_Knowledge/Tensorflow Lite vs PyTorch Mobile vs TVM Runtime vs ONNX Runtime vs TensorRT.md
